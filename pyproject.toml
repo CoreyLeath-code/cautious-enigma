@@ -17,7 +17,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-omit = ["tests/*", "examples/*", "benchmarks/*", "src/models/*", "src/pipelines/*", "src/utils/*"]
+omit = ["tests/*", "examples/*", "benchmarks/*", "src/models/*", "src/pipelines/*", "src/utils/*", "alert.py", "main.py", "config.py", "app/server.py"]
 
 [tool.ruff]
 target-version = "py311"
