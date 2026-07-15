@@ -16,7 +16,7 @@ This file standardizes preprocessing for both training & inference.
 import logging
 import pandas as pd
 import numpy as np
-from utils.config import get_config
+from src.utils.config import get_config
 
 logger = logging.getLogger("PreprocessPipeline")
 logger.setLevel(logging.INFO)
