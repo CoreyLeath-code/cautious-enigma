@@ -1,28 +1,6 @@
-# Global ownership
-* @corey-ai
-
-# Module-specific ownership
-data_loader.py @corey-ai
-feature_engineering.py @corey-ai
-model.py @corey-ai
-detector.py @corey-ai
-alert.py @corey-ai
-
-# Deployment files
-Dockerfile @corey-ai
-helm/ @corey-ai
-ansible/ @corey-ai
-k8s/ @corey-ai
-
-# API and dashboard
-api.py @corey-ai
-dashboard.py @corey-ai
-templates/ @corey-ai
-
-# Docs and notebooks
-docs/ @corey-ai
-notebooks/ @corey-ai
-
-# Tests and CI
-tests/ @corey-ai
-.github/workflows/ @corey-ai
+* @CoreyLeath-code
+/.github/ @CoreyLeath-code
+/deployment.yaml @CoreyLeath-code
+/Dockerfile @CoreyLeath-code
+/Requirements.txt @CoreyLeath-code
+/SECURITY.md @CoreyLeath-code
