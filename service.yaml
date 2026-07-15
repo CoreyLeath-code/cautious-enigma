@@ -1,12 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: threat-detector
+  name: cautious-enigma
+  labels:
+    app.kubernetes.io/name: cautious-enigma
 spec:
-  selector:
-    app: threat-detector
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8000
   type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cautious-enigma
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
