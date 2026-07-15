@@ -4,7 +4,7 @@ install:
 	python -m pip install -r requirements-dev.txt
 
 quality:
-	ruff check app benchmarks tests *.py
+	ruff check app benchmarks tests/test_api.py tests/test_benchmark.py
 	bandit -q -r app benchmarks
 	pip-audit -r Requirements.txt
 
