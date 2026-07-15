@@ -7,7 +7,6 @@ import hashlib
 import json
 import platform
 import statistics
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,8 +53,7 @@ def run(rows: int, iterations: int, warmup: int, seed: int) -> dict[str, Any]:
         result = model.predict(frame)
         durations.append((time.perf_counter_ns() - started) / 1_000_000)
 
-    assert result is not None
-    median_ms = statistics.median(durations)
+    if result is None:\n        raise RuntimeError("benchmark did not execute")\n    median_ms = statistics.median(durations)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "benchmark": "isolation_forest_batch_inference",
@@ -80,9 +78,7 @@ def run(rows: int, iterations: int, warmup: int, seed: int) -> dict[str, Any]:
             "numpy": np.__version__,
             "pandas": pd.__version__,
             "scikit_learn": sklearn.__version__,
-            "dataset_sha256": hashlib.sha256(
-                frame.to_csv(index=False).encode("utf-8")
-            ).hexdigest(),
+            "dataset_sha256": hashlib.sha256(\n                frame.to_csv(index=False).encode("utf-8"), usedforsecurity=False\n            ).hexdigest(),
         },
     }
     return payload
