@@ -1,120 +1,102 @@
-"""
-api.py — L6 Production-Ready FastAPI Inference Service
-
-Features:
-✔ FastAPI async endpoints
-✔ Pydantic request validation
-✔ Automatic preprocessing + inference pipeline
-✔ Health/liveness/readiness endpoints (Kubernetes-ready)
-✔ Logging for observability
-✔ Batch & real-time prediction support
-✔ Works with Docker, Kubernetes, CI/CD
-
-This API serves your ML model in production.
-"""
+"""FastAPI inference service with health probes and Prometheus telemetry."""
 
 import logging
-from fastapi import FastAPI
-from pydantic import BaseModel, Field
-from typing import List, Optional, Union
+import time
+from collections.abc import Awaitable, Callable
+from typing import Any
 
-from pipelines.inference_pipeline import (
-    run_realtime_inference,
-    run_batch_inference,
+from fastapi import FastAPI, HTTPException, Request, Response
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.pipelines.inference_pipeline import run_batch_inference, run_realtime_inference
+
+logger = logging.getLogger(__name__)
+
+REQUESTS = Counter(
+    "cautious_enigma_http_requests_total",
+    "HTTP requests handled",
+    ("method", "path", "status"),
 )
-from utils.config import get_config
-
-logger = logging.getLogger("FastAPI")
-logger.setLevel(logging.INFO)
+LATENCY = Histogram(
+    "cautious_enigma_http_request_duration_seconds",
+    "HTTP request latency",
+    ("method", "path"),
+)
 
 app = FastAPI(
-    title="Cautious Enigma ML Inference API",
-    description="L6-grade FastAPI server for vehicle safety classification",
-    version="1.0.0"
+    title="Cautious Enigma Threat Detection API",
+    description="Validated real-time and batch anomaly detection.",
+    version="1.1.0",
 )
 
-cfg = get_config()
-EXPECTED_FEATURES = cfg.get("data.features")
-
-
-# ------------------------------------------------------
-# Request Models
-# ------------------------------------------------------
 
 class PredictionRequest(BaseModel):
-    """Schema for real-time prediction."""
-    data: dict = Field(
-        ..., example={"speed": 55, "visibility": 0.9, "weather": 2}
+    """Validated real-time feature payload."""
+
+    model_config = ConfigDict(extra="forbid")
+    data: dict[str, float] = Field(
+        ..., examples=[{"hour": 12, "ip_freq": 3, "suspicious_flag": 1}]
     )
 
 
 class BatchPredictionRequest(BaseModel):
-    """Schema for batch prediction over file paths."""
-    input_file: str = Field(..., example="data/input.csv")
-    output_file: Optional[str] = Field(
-        None, example="data/predictions.csv"
-    )
+    """Validated batch file request."""
+
+    model_config = ConfigDict(extra="forbid")
+    input_file: str = Field(..., min_length=1)
+    output_file: str | None = None
 
 
-# ------------------------------------------------------
-# Health Check Endpoints (Kubernetes)
-# ------------------------------------------------------
+@app.middleware("http")
+async def record_metrics(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Record bounded-cardinality request count and latency."""
+    started = time.perf_counter()
+    response = await call_next(request)
+    route = request.scope.get("route")
+    path = getattr(route, "path", "unmatched")
+    REQUESTS.labels(request.method, path, str(response.status_code)).inc()
+    LATENCY.labels(request.method, path).observe(time.perf_counter() - started)
+    return response
+
 
 @app.get("/health")
-async def health_check():
-    """Basic health check."""
+async def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
+
 @app.get("/live")
-async def liveness_probe():
-    """K8s liveness probe."""
+async def liveness_probe() -> dict[str, bool]:
     return {"alive": True}
 
+
 @app.get("/ready")
-async def readiness_probe():
-    """K8s readiness probe."""
+async def readiness_probe() -> dict[str, bool]:
     return {"ready": True}
 
 
-# ------------------------------------------------------
-# REAL-TIME PREDICTION ENDPOINT
-# ------------------------------------------------------
+@app.get("/metrics", include_in_schema=False)
+async def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
 
 @app.post("/predict")
-async def predict(req: PredictionRequest):
-    """
-    Real-time model prediction endpoint.
-
-    Example payload:
-    {
-        "data": {"speed": 60, "visibility": 0.8, "weather": 1}
-    }
-    """
-    logger.info("Received real-time prediction request...")
+async def predict(req: PredictionRequest) -> dict[str, Any]:
     try:
-        results = run_realtime_inference(req.data)
-        return {"prediction": results}
-    except Exception as e:
-        logger.error(f"Prediction error: {e}")
-        return {"error": str(e)}
+        return {"prediction": run_realtime_inference(req.data)}
+    except (ValueError, FileNotFoundError) as exc:
+        logger.warning("Prediction rejected: %s", exc)
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Prediction failed")
+        raise HTTPException(status_code=503, detail="Model unavailable") from exc
 
-
-# ------------------------------------------------------
-# BATCH INFERENCE ENDPOINT
-# ------------------------------------------------------
 
 @app.post("/batch_predict")
-async def batch_predict(req: BatchPredictionRequest):
-    """
-    Batch prediction endpoint.
-
-    Accepts a CSV or Parquet file path and returns or saves predictions.
-    """
-    logger.info(
-        f"Received batch prediction request "
-        f"for => {req.input_file}"
-    )
-
+async def batch_predict(req: BatchPredictionRequest) -> dict[str, Any]:
     try:
         results = run_batch_inference(req.input_file, req.output_file)
         return {
@@ -122,24 +104,17 @@ async def batch_predict(req: BatchPredictionRequest):
             "rows_processed": len(results),
             "output_file": req.output_file,
         }
-    except Exception as e:
-        logger.error(f"Batch inference error: {e}")
-        return {"error": str(e)}
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Batch prediction failed")
+        raise HTTPException(status_code=503, detail="Model unavailable") from exc
 
-
-# ------------------------------------------------------
-# ROOT
-# ------------------------------------------------------
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, Any]:
     return {
-        "message": "Welcome to the Cautious Enigma ML Inference API",
-        "available_endpoints": [
-            "/predict",
-            "/batch_predict",
-            "/health",
-            "/ready",
-            "/live"
-        ]
+        "service": "cautious-enigma",
+        "version": app.version,
+        "endpoints": ["/predict", "/batch_predict", "/health", "/ready", "/live"],
     }

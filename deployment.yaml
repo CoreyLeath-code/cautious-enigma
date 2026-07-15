@@ -1,46 +1,74 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: threat-detector
+  name: cautious-enigma
+  labels:
+    app.kubernetes.io/name: cautious-enigma
 spec:
   replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
-      app: threat-detector
+      app.kubernetes.io/name: cautious-enigma
   template:
     metadata:
       labels:
-        app: threat-detector
+        app.kubernetes.io/name: cautious-enigma
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-        - name: threat-detector
-          image: your-dockerhub/threat-detector:latest
+        - name: api
+          image: ghcr.io/coreyleath-code/cautious-enigma:1.1.0
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8000
-          env:
-            - name: ALERT_WEBHOOK_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: threat-config
-                  key: ALERT_WEBHOOK_URL
+            - name: http
+              containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
           resources:
             requests:
-              cpu: "250m"
-              memory: "256Mi"
+              cpu: 100m
+              memory: 256Mi
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /live
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
           livenessProbe:
             httpGet:
               path: /live
-              port: 8000
-            initialDelaySeconds: 15
+              port: http
             periodSeconds: 20
-            failureThreshold: 3
+            timeoutSeconds: 2
           readinessProbe:
             httpGet:
               path: /ready
-              port: 8000
-            initialDelaySeconds: 10
+              port: http
             periodSeconds: 10
-            failureThreshold: 3
+            timeoutSeconds: 2
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

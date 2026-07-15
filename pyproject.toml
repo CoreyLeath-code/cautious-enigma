@@ -1,32 +1,37 @@
 [project]
-name = "threat-detector"
-version = "1.0.0"
-description = "AI-powered cybersecurity threat detection system"
-authors = [
-  { name="Corey", email="corey@example.com" }
-]
+name = "cautious-enigma"
+version = "1.1.0"
+description = "Reproducible anomaly-detection pipeline and observable FastAPI service"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = [
-  "pandas",
-  "numpy",
-  "scikit-learn",
-  "flask",
-  "plotly",
-  "snowflake-connector-python",
-  "pyyaml",
-  "pytest"
-]
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/threat-detection-system"
-Issues = "https://github.com/yourusername/threat-detection-system/issues"
+Repository = "https://github.com/CoreyLeath-code/cautious-enigma"
+Issues = "https://github.com/CoreyLeath-code/cautious-enigma/issues"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["threat_detector*"]
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --cov=. --cov-report=term-missing --cov-report=xml --cov-fail-under=55"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+omit = ["tests/*", "examples/*", "benchmarks/*", "src/models/*", "src/pipelines/*", "src/utils/*", "alert.py", "main.py", "config.py", "app/server.py"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["S101"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=80.9,<81", "wheel>=0.46.2,<0.47"]
 build-backend = "setuptools.build_meta"

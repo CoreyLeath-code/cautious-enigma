@@ -12,9 +12,11 @@ Features:
 This file is what you run in production or local dev.
 """
 
-import uvicorn
 import logging
-from utils.config import get_config
+
+import uvicorn
+
+from src.utils.config import get_config
 
 logger = logging.getLogger("UvicornServer")
 logger.setLevel(logging.INFO)
@@ -28,7 +30,7 @@ def start_server():
     cfg = get_config()
     server_cfg = cfg.get("server", {})
 
-    host = server_cfg.get("host", "0.0.0.0")
+    host = server_cfg.get("host", "127.0.0.1")
     port = int(server_cfg.get("port", 8000))
     reload = bool(server_cfg.get("reload", False))
     workers = int(server_cfg.get("workers", 1))

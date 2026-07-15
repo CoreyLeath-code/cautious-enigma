@@ -19,7 +19,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from utils.config import get_config
+from src.utils.config import get_config
 
 logger = logging.getLogger("ModelRegistry")
 logger.setLevel(logging.INFO)

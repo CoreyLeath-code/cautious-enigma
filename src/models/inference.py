@@ -12,8 +12,8 @@ This module powers real-time or batch predictions.
 import logging
 import numpy as np
 import pandas as pd
-from utils.config import get_config
-from utils.model_registry import get_registry
+from src.utils.config import get_config
+from src.utils.model_registry import get_registry
 
 logger = logging.getLogger("InferenceEngine")
 logger.setLevel(logging.INFO)
