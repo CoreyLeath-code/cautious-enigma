@@ -46,14 +46,18 @@ def run(rows: int, iterations: int, warmup: int, seed: int) -> dict[str, Any]:
     for _ in range(warmup):
         model.predict(frame)
 
-    durations = []
-    result = None
+    durations: list[float] = []
+    result: np.ndarray[Any, Any] | None = None
     for _ in range(iterations):
         started = time.perf_counter_ns()
         result = model.predict(frame)
         durations.append((time.perf_counter_ns() - started) / 1_000_000)
 
-    if result is None:\n        raise RuntimeError("benchmark did not execute")\n    median_ms = statistics.median(durations)
+    if result is None:
+        raise RuntimeError("benchmark did not execute")
+
+    median_ms = statistics.median(durations)
+    dataset_bytes = frame.to_csv(index=False).encode("utf-8")
     payload = {
         "schema_version": SCHEMA_VERSION,
         "benchmark": "isolation_forest_batch_inference",
@@ -78,7 +82,9 @@ def run(rows: int, iterations: int, warmup: int, seed: int) -> dict[str, Any]:
             "numpy": np.__version__,
             "pandas": pd.__version__,
             "scikit_learn": sklearn.__version__,
-            "dataset_sha256": hashlib.sha256(\n                frame.to_csv(index=False).encode("utf-8"), usedforsecurity=False\n            ).hexdigest(),
+            "dataset_sha256": hashlib.sha256(
+                dataset_bytes, usedforsecurity=False
+            ).hexdigest(),
         },
     }
     return payload
@@ -90,14 +96,18 @@ def main() -> None:
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--output", type=Path, default=ROOT / "artifacts" / "benchmark.json")
+    parser.add_argument(
+        "--output", type=Path, default=ROOT / "artifacts" / "benchmark.json"
+    )
     args = parser.parse_args()
     if min(args.rows, args.iterations) < 1 or args.warmup < 0:
         parser.error("rows and iterations must be positive; warmup must be non-negative")
 
     result = run(args.rows, args.iterations, args.warmup, args.seed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
 
 
