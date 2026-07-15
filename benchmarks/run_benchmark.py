@@ -8,7 +8,7 @@ import json
 import platform
 import statistics
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -76,7 +76,7 @@ def run(rows: int, iterations: int, warmup: int, seed: int) -> dict[str, Any]:
             "anomalies_last_iteration": int((result == -1).sum()),
         },
         "provenance": {
-            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "generated_at_utc": datetime.now(UTC).isoformat(),
             "python": platform.python_version(),
             "platform": platform.platform(),
             "numpy": np.__version__,
