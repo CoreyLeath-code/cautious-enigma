@@ -1,49 +1,16 @@
-# 🔐 Security Policy
+# Security policy
 
-## 📣 Reporting a Vulnerability
+## Supported versions
 
-If you discover a security vulnerability in this project, please report it responsibly.
+Security fixes are applied to the default branch and the latest tagged release.
 
-- **Email**: security@yourdomain.com
-- **Subject**: `[SECURITY] Vulnerability Report: Threat Detection System`
-- **Include**:
-  - Description of the vulnerability
-  - Steps to reproduce
-  - Potential impact
-  - Suggested mitigation (if any)
+## Reporting
 
-We will respond within **5 business days** and work with you to resolve the issue promptly.
+Do not disclose vulnerabilities in a public issue. Use GitHub's private vulnerability
+reporting for this repository. Include the affected commit, reproduction steps, impact,
+and a minimal proof of concept. Maintainers will acknowledge reports within five business
+days.
 
----
-
-## 🧭 Scope
-
-This policy applies to:
-
-- Code execution vulnerabilities
-- Data leakage or exposure
-- Authentication bypass
-- Privilege escalation
-- Denial of service
-- Insecure configurations (Docker, K8s, Helm, Ansible)
-
----
-
-## 🚫 Out of Scope
-
-- UI bugs or typos
-- Missing features
-- Non-production configurations
-- Vulnerabilities in third-party dependencies (unless exploitable through this system)
-
----
-
-## 🛡️ Responsible Disclosure
-
-Please do **not** publicly disclose vulnerabilities until we’ve confirmed and patched them. We appreciate your help in keeping this system secure.
-
----
-
-## 🧾 Legal
-
-By submitting a vulnerability report, you agree to act in good faith and comply with all applicable laws.
+Secrets must come from the deployment platform. Example manifests contain no credentials.
+Images are scanned in CI, release images receive an SPDX SBOM, and tagged images are signed
+keylessly with Cosign.
