@@ -7,6 +7,8 @@ def test_benchmark_is_deterministic_and_has_provenance() -> None:
 
     assert first["schema_version"] == "1.0.0"
     assert first["provenance"]["dataset_sha256"] == second["provenance"]["dataset_sha256"]
-    assert first["metrics"]["anomalies_last_iteration"] == second["metrics"]["anomalies_last_iteration"]
+    first_anomalies = first["metrics"]["anomalies_last_iteration"]
+    second_anomalies = second["metrics"]["anomalies_last_iteration"]
+    assert first_anomalies == second_anomalies
     assert first["metrics"]["latency_median_ms"] > 0
     assert first["metrics"]["throughput_rows_per_second"] > 0
