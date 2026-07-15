@@ -14,6 +14,7 @@ Issues = "https://github.com/CoreyLeath-code/cautious-enigma/issues"
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers --cov=. --cov-report=term-missing --cov-report=xml --cov-fail-under=55"
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true
