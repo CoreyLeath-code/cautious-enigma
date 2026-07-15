@@ -1,0 +1,13 @@
+.git
+.github
+.pytest_cache
+.ruff_cache
+.venv
+artifacts
+htmlcov
+logs
+mlruns
+models/registry
+tests
+*.pyc
+.env
