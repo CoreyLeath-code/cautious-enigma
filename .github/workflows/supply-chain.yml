@@ -38,12 +38,15 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+      - name: Prepare artifact directory
+        run: mkdir -p artifacts
       - name: Generate SPDX SBOM
         uses: anchore/sbom-action@v0
         with:
           image: cautious-enigma:scan
           format: spdx-json
           output-file: artifacts/sbom.spdx.json
+          upload-artifact: false
       - uses: actions/upload-artifact@v4
         with:
           name: sbom-spdx
