@@ -70,8 +70,12 @@ def run(rows: int, iterations: int, warmup: int, seed: int) -> dict[str, Any]:
             "contamination": 0.1,
         },
         "metrics": {
+            "latency_min_ms": round(min(durations), 3),
+            "latency_mean_ms": round(statistics.mean(durations), 3),
             "latency_median_ms": round(median_ms, 3),
             "latency_p95_ms": round(percentile(durations, 0.95), 3),
+            "latency_p99_ms": round(percentile(durations, 0.99), 3),
+            "latency_max_ms": round(max(durations), 3),
             "throughput_rows_per_second": round(rows / (median_ms / 1000), 2),
             "anomalies_last_iteration": int((result == -1).sum()),
         },
