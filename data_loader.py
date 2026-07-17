@@ -21,7 +21,7 @@ def preprocess_logs(df):
         logging.warning("Empty DataFrame received for preprocessing.")
         return df
 
-    df = df.dropna()
+    df = df.dropna().copy()
     if 'timestamp' in df.columns:
         df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
     logging.info("Preprocessing complete.")
