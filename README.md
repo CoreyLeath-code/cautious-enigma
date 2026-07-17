@@ -1,7 +1,7 @@
 # Cautious Enigma
 
-[![CI](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml/badge.svg)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml)
-[![Supply Chain](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/supply-chain.yml/badge.svg)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/supply-chain.yml)
+[![CI](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml/badge.svg?branch=agent%2Fproduction-hardening)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml?query=branch%3Aagent%2Fproduction-hardening)
+[![Supply Chain](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/supply-chain.yml/badge.svg?branch=agent%2Fproduction-hardening)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/supply-chain.yml?query=branch%3Aagent%2Fproduction-hardening)
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.139-009688?logo=fastapi&logoColor=white)
 ![Coverage gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A590%25-success)
