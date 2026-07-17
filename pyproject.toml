@@ -12,18 +12,17 @@ Repository = "https://github.com/CoreyLeath-code/cautious-enigma"
 Issues = "https://github.com/CoreyLeath-code/cautious-enigma/issues"
 
 [tool.pytest.ini_options]
-addopts = "-ra --strict-markers --cov=. --cov-report=term-missing --cov-report=xml --cov-fail-under=55"
+addopts = "-ra --strict-markers --cov=app.api --cov=benchmarks.run_benchmark --cov=src.utils.model_registry --cov-report=term-missing --cov-report=xml --cov-fail-under=90"
 testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true
-omit = ["tests/*", "examples/*", "benchmarks/*", "src/models/*", "src/pipelines/*", "src/utils/*", "alert.py", "main.py", "config.py", "app/server.py"]
+omit = ["tests/*", "examples/*", "app/server.py"]
 
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-extend-exclude = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S"]
@@ -35,3 +34,9 @@ exclude_dirs = ["tests"]
 [build-system]
 requires = ["setuptools>=80.9,<81", "wheel>=0.46.2,<0.47"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["Requirements.txt"] }
+
+[tool.setuptools.packages.find]
+include = ["app*", "benchmarks*", "src*"]
