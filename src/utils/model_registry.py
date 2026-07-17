@@ -1,123 +1,98 @@
-"""
-model_registry.py — L5/L6 Production-Grade Local Model Registry
+"""Versioned local model registry with artifact integrity verification."""
 
-Features:
-✔ Versioned model saving (v1, v2, v3...)
-✔ SHA-256 fingerprinting for reproducibility
-✔ JSON metadata tracking (timestamp, size, hash)
-✔ Works with: sklearn, xgboost, pytorch, lightgbm, catboost
-✔ Centralized logging & directory management
-✔ Production-safe loading & validation
+from __future__ import annotations
 
-This provides L6-level model traceability without full MLflow infra.
-"""
-
-import json
-import pickle
 import hashlib
+import json
 import logging
-from datetime import datetime
+import os
+import pickle  # nosec B403
+import re
+import secrets
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from src.utils.config import get_config
 
-logger = logging.getLogger("ModelRegistry")
-logger.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class ModelRegistry:
-    def __init__(self):
-        self.cfg = get_config()
-        self.registry_dir = Path(self.cfg.get("models.registry_dir", "models/registry"))
+    """Persist trusted local artifacts; never load models from attacker-writable storage."""
+
+    MODEL_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+
+    def __init__(self) -> None:
+        configured = os.getenv(
+            "MODEL_REGISTRY_DIR",
+            get_config().get("models.registry_dir", "models/registry"),
+        )
+        self.registry_dir = Path(configured).resolve()
         self.registry_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"[OK] Model registry initialized at: {self.registry_dir}")
+    @classmethod
+    def _validate_name(cls, model_name: str) -> None:
+        if not cls.MODEL_NAME.fullmatch(model_name):
+            raise ValueError("model_name must be a safe identifier")
 
     @staticmethod
-    def _compute_sha256(file_path):
-        """Compute SHA-256 hash for a saved model."""
-        sha = hashlib.sha256()
-        with open(file_path, "rb") as f:
-            while chunk := f.read(8192):
-                sha.update(chunk)
-        return sha.hexdigest()
+    def _compute_sha256(file_path: Path) -> str:
+        digest = hashlib.sha256()
+        with file_path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(64 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
 
-    def _get_next_version(self, model_name):
-        """Return next version number based on existing saved versions."""
-        existing = list(self.registry_dir.glob(f"{model_name}_v*.pkl"))
-        if not existing:
-            return 1
-        versions = [int(f.stem.split("_v")[-1]) for f in existing]
-        return max(versions) + 1
+    def _get_next_version(self, model_name: str) -> int:
+        self._validate_name(model_name)
+        versions = [
+            int(path.stem.rsplit("_v", 1)[1])
+            for path in self.registry_dir.glob(f"{model_name}_v*.pkl")
+            if path.stem.rsplit("_v", 1)[1].isdigit()
+        ]
+        return max(versions, default=0) + 1
 
-    def save_model(self, model, model_name: str):
-        """Save a versioned model with metadata."""
+    def save_model(self, model: Any, model_name: str) -> dict[str, Any]:
+        self._validate_name(model_name)
         version = self._get_next_version(model_name)
         model_file = self.registry_dir / f"{model_name}_v{version}.pkl"
-        metadata_file = self.registry_dir / f"{model_name}_v{version}.json"
+        metadata_file = model_file.with_suffix(".json")
+        with model_file.open("wb") as handle:
+            pickle.dump(model, handle)
+        fingerprint = self._compute_sha256(model_file)
+        metadata = {
+            "model_name": model_name,
+            "version": version,
+            "file_name": model_file.name,
+            "fingerprint_sha256": fingerprint,
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "size_bytes": model_file.stat().st_size,
+        }
+        metadata_file.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+        logger.info("Registered %s v%s (%s)", model_name, version, fingerprint)
+        return metadata
 
-        try:
-            # Save model
-            with open(model_file, "wb") as f:
-                pickle.dump(model, f)
-
-            # Compute fingerprint
-            fingerprint = self._compute_sha256(model_file)
-
-            # Metadata
-            metadata = {
-                "model_name": model_name,
-                "version": version,
-                "file_path": str(model_file),
-                "fingerprint_sha256": fingerprint,
-                "timestamp": datetime.utcnow().isoformat(),
-                "size_kb": round(model_file.stat().st_size / 1024, 2),
-            }
-
-            # Save metadata
-            with open(metadata_file, "w") as f:
-                json.dump(metadata, f, indent=4)
-
-            logger.info(f"[SAVED] Model '{model_name}' v{version}")
-            logger.info(f"Location: {model_file}")
-            logger.info(f"Fingerprint: {fingerprint}")
-
-            return metadata
-
-        except Exception as e:
-            logger.error(f"Failed to save model: {e}")
-            raise
-
-    def load_model(self, model_name: str, version: int = None):
-        """
-        Load a model by name and (optional) version.
-        If version not specified — loads the latest version.
-        """
-        if version is None:
-            version = self._get_next_version(model_name) - 1
-
-        model_file = self.registry_dir / f"{model_name}_v{version}.pkl"
-        metadata_file = self.registry_dir / f"{model_name}_v{version}.json"
-
-        if not model_file.exists():
-            raise FileNotFoundError(
-                f"Model version not found: {model_name}_v{version}.pkl"
-            )
-
-        with open(model_file, "rb") as f:
-            model = pickle.load(f)
-
-        logger.info(f"[LOADED] {model_name} v{version}")
-
-        if metadata_file.exists():
-            with open(metadata_file, "r") as f:
-                metadata = json.load(f)
-            logger.info(f"Metadata: {metadata}")
-        else:
-            logger.warning("No metadata file found for this model version.")
-
+    def load_model(self, model_name: str, version: int | None = None) -> Any:
+        self._validate_name(model_name)
+        selected = self._get_next_version(model_name) - 1 if version is None else version
+        if not isinstance(selected, int) or selected < 1:
+            raise ValueError("version must be a positive integer")
+        model_file = self.registry_dir / f"{model_name}_v{selected}.pkl"
+        metadata_file = model_file.with_suffix(".json")
+        if not model_file.is_file() or not metadata_file.is_file():
+            raise FileNotFoundError(f"Model or metadata not found: {model_name}_v{selected}")
+        metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
+        expected = metadata.get("fingerprint_sha256")
+        actual = self._compute_sha256(model_file)
+        if not isinstance(expected, str) or not secrets.compare_digest(expected, actual):
+            raise RuntimeError("model artifact integrity check failed")
+        # Pickle can execute code. Integrity and trusted registry ownership are mandatory controls.
+        with model_file.open("rb") as handle:
+            model = pickle.load(handle)  # noqa: S301  # nosec B301
+        logger.info("Loaded %s v%s (%s)", model_name, selected, actual)
         return model
 
 
-# Global accessor
-def get_registry():
+def get_registry() -> ModelRegistry:
     return ModelRegistry()
