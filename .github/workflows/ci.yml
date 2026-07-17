@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -49,7 +49,7 @@ jobs:
     timeout-minutes: 15
     needs: quality
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build --tag cautious-enigma:${{ github.sha }} .
       - name: Verify non-root runtime and probes
         run: |
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate Kubernetes schemas
         run: |
           docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:v0.7.0             -strict -summary /work/deployment.yaml /work/service.yaml /work/network-policy.yaml
