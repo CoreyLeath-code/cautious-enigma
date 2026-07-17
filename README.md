@@ -2,12 +2,15 @@
 
 [![CI](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml/badge.svg)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml)
 [![Supply Chain](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/supply-chain.yml/badge.svg)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/supply-chain.yml)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
-![Quality gates](https://img.shields.io/badge/quality%20gates-lint%20%7C%20test%20%7C%20audit-success)
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.139-009688?logo=fastapi&logoColor=white)
+![Coverage gate](https://img.shields.io/badge/coverage%20gate-%E2%89%A590%25-success)
+![Dependency audit](https://img.shields.io/badge/pip--audit-0%20known%20CVEs-success)
 ![Deployment hygiene](https://img.shields.io/badge/deployment%20hygiene-9%2F9-success)
 ![Container](https://img.shields.io/badge/container-non--root%20%7C%20read--only-2496ED?logo=docker&logoColor=white)
 ![SBOM](https://img.shields.io/badge/SBOM-SPDX-4c1)
 ![Reproducible](https://img.shields.io/badge/benchmark-seeded%20%2B%20versioned-blueviolet)
+[![Benchmark](https://img.shields.io/badge/reference%20p99-4.824%20ms-blueviolet)](#reference-benchmark-results)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 Cautious Enigma is a reproducible anomaly-detection pipeline and observable FastAPI service.
@@ -41,6 +44,26 @@ and anomaly count in a versioned JSON document.
 The latest numerical performance measurements are attached to each successful CI run as
 `benchmark-and-coverage/artifacts/benchmark.json`. This avoids presenting a stale result as a
 universal claim. GitHub records the runner image and commit alongside the artifact.
+
+## Reference benchmark results
+
+| Metric | Result | Interpretation |
+|---|---:|---|
+| Median batch latency | 4.620 ms | Central latency across five timed iterations |
+| Mean batch latency | 4.671 ms | Arithmetic mean across timed iterations |
+| P95 / P99 latency | 4.824 / 4.824 ms | Observed tail latency in this small reference sample |
+| Min / max latency | 4.601 / 4.824 ms | Observed range |
+| Throughput | 216,440.85 rows/s | 1,000 rows divided by median latency |
+| Detected anomalies | 99 / 1,000 | Deterministic output for the configured synthetic dataset |
+
+**Reference environment.** Windows 11, Python 3.12.13, NumPy 1.26.4, pandas 2.2.3,
+scikit-learn 1.5.2; generated 2026-07-17. The protocol used seed 42, 100 estimators,
+contamination 0.1, one warm-up, and five timed iterations. Dataset SHA-256:
+`4f3218f02149d84c2c58c156f7d1938da03e03c8d9c1f7a9a5680c443f0e5fcc`.
+
+This is descriptive systems evidence from one machine, not a confidence interval, production SLO,
+or model-quality result. The five-iteration sample is intentionally lightweight for reproducibility;
+use the CI artifact and a larger pre-registered run before making comparative performance claims.
 
 ## Benchmark protocol
 
