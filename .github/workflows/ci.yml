@@ -36,7 +36,7 @@ jobs:
         run: pytest
       - name: Reproducible benchmark
         run: python benchmarks/run_benchmark.py --rows 1000 --iterations 5 --warmup 1 --output artifacts/benchmark.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: benchmark-and-coverage
           path: |
