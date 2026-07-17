@@ -28,7 +28,7 @@ and anomaly count in a versioned JSON document.
 
 | Evidence | Metric or invariant | Acceptance rule | Verification |
 |---|---|---:|---|
-| Unit/API suite | Branch coverage | >= 55% | `pytest`; inspect `coverage.xml` |
+| Unit/API suite | Branch coverage | >= 90% | `pytest`; inspect `coverage.xml` |
 | Static analysis | Ruff and Bandit findings | 0 blocking findings | `make quality` |
 | Dependencies | Known vulnerable runtime packages | 0 audit failures | `pip-audit -r Requirements.txt` |
 | Container | Runtime UID | exactly `10001` | CI executes `id -u` inside the image |
@@ -77,13 +77,17 @@ uvicorn app.api:app --host 127.0.0.1 --port 8000
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/metrics
 curl -X POST http://127.0.0.1:8000/predict \
+  -H "x-api-key: $CAUTIOUS_API_KEY" \
   -H "content-type: application/json" \
   -d '{"data":{"hour":12,"ip_freq":3,"suspicious_flag":1}}'
 ```
 
-The prediction endpoint requires a trained `baseline_classifier` in the model registry. Missing
-models return a sanitized HTTP 503; invalid features return HTTP 422. Prometheus telemetry exposes
-bounded-cardinality request counts and latency histograms at `/metrics`.
+Set `CAUTIOUS_API_KEY` in production; prediction routes then require the `x-api-key` header.
+`/batch_predict` accepts at most 1,000 inline records and never accepts server filesystem paths.
+The prediction endpoint requires a trained `baseline_classifier` in the model registry. Registry
+artifacts are SHA-256 verified before deserialization. Missing models return a sanitized HTTP 503;
+invalid features return HTTP 422. Prometheus telemetry exposes bounded-cardinality request counts
+and latency histograms at `/metrics`.
 
 ## Architecture
 
@@ -108,6 +112,10 @@ flowchart LR
 | `benchmarks/` | Reproducible research benchmark |
 | `tests/` | Behavior, API contract, and provenance verification |
 | `.github/workflows/` | Quality, benchmark, deployment, and supply-chain evidence |
+
+Operational decisions, residual risks, and production readiness are recorded in
+[the audit](docs/AUDIT.md), [deployment runbook](docs/DEPLOYMENT.md), and
+[production checklist](docs/PRODUCTION_CHECKLIST.md).
 
 ## Deployment hygiene
 
