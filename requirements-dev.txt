@@ -1,5 +1,5 @@
 -r Requirements.txt
-bandit==1.8.6
+bandit==1.9.4
 httpx==0.28.1
 pip-audit==2.9.0
 pytest==9.1.1
