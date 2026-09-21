@@ -10,4 +10,4 @@ python-dotenv==1.2.3
 PyYAML==6.0.2
 requests==2.33.0
 scikit-learn==1.9.0
-uvicorn==0.52.4
+uvicorn==0.53.0
