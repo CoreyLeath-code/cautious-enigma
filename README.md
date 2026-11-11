@@ -2,6 +2,12 @@
 
 # Cautious Enigma
 
+<!-- portfolio-lifecycle-badges:start -->
+[![Latest release](https://img.shields.io/github/v/release/CoreyLeath-code/cautious-enigma?display_name=tag&sort=semver)](https://github.com/CoreyLeath-code/cautious-enigma/releases/latest)
+[![Lifecycle documentation](https://img.shields.io/badge/lifecycle-documented-2563eb)](#ownership-promotion-and-operational-lifecycle)
+[![Maintainer](https://img.shields.io/badge/maintainer-Corey%20Leath-111827)](https://github.com/CoreyLeath-code)
+<!-- portfolio-lifecycle-badges:end -->
+
 ### Reproducible anomaly-detection pipeline and observable FastAPI service built around deterministic Isolation Forest inference.
 
 [![CI](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/cautious-enigma/actions/workflows/ci.yml)
