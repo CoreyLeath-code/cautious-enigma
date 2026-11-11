@@ -14,7 +14,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && python -m pip install --upgrade "pip>=26.1,<27" \
     && python -m pip install -r Requirements.txt \
-    && python -m pip install --upgrade --force-reinstall "msgpack==1.2.1" \
+    && python -m pip install --upgrade --force-reinstall "msgpack==1.2.3" \
     && python -m pip check \
     && python -m pip uninstall -y setuptools wheel \
     && python -m pip uninstall -y pip \
