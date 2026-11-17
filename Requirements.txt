@@ -1,12 +1,12 @@
 # Runtime dependencies are pinned for repeatable builds.
-fastapi==0.142.1
+fastapi==0.143.0
 starlette==1.8.0
 joblib==1.6.0
 numpy==2.4.6
 pandas==3.0.6
 prometheus-client==0.26.0
 pydantic==2.14.1
-python-dotenv==1.2.3
+python-dotenv==1.2.4
 PyYAML==6.0.2
 requests==2.33.0
 scikit-learn==1.9.0
