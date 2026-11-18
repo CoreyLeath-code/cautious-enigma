@@ -64,3 +64,25 @@ def test_batch_rejects_failures_and_unknown_fields() -> None:
     with patch("app.api.run_realtime_inference", side_effect=RuntimeError("model")):
         assert client.post("/batch_predict", json={"records": [{"hour": 1}]}).status_code == 503
     assert client.post("/predict", json={"data": {}, "unknown": True}).status_code == 422
+
+
+def test_production_refuses_predictions_without_configured_api_key(monkeypatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.delenv("CAUTIOUS_API_KEY", raising=False)
+
+    single = client.post("/predict", json={"data": {"hour": 12}})
+    batch = client.post("/batch_predict", json={"records": [{"hour": 12}]})
+    assert single.status_code == batch.status_code == 503
+    assert "authentication is not configured" in single.json()["detail"]
+    assert client.get("/health").status_code == 200
+
+
+def test_production_accepts_only_configured_key(monkeypatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("CAUTIOUS_API_KEY", "test-only-key")
+    payload = {"data": {"hour": 12}}
+
+    assert client.post("/predict", json=payload).status_code == 401
+    with patch("app.api.run_realtime_inference", return_value=[1]):
+        result = client.post("/predict", json=payload, headers={"X-API-Key": "test-only-key"})
+    assert result.status_code == 200
