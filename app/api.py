@@ -55,7 +55,11 @@ class BatchPredictionRequest(BaseModel):
 def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
     """Require a constant-time API-key match when configured by the operator."""
     expected = os.getenv("CAUTIOUS_API_KEY")
-    if expected and (x_api_key is None or not secrets.compare_digest(x_api_key, expected)):
+    if not expected:
+        if os.getenv("ENVIRONMENT", "development").strip().lower() == "production":
+            raise HTTPException(status_code=503, detail="API authentication is not configured")
+        return
+    if x_api_key is None or not secrets.compare_digest(x_api_key, expected):
         raise HTTPException(status_code=401, detail="Invalid API key")
 
 
